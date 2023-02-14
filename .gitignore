@@ -1,0 +1,6 @@
+.DS_Store
+.idea/
+gogo-azurerm-info
+*.sqlite3
+*.csv
+graphs
