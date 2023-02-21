@@ -19,6 +19,10 @@ type ResourceOrData struct {
 
 	SdkTrack1  bool
 	SdkPandora bool
+
+	UsesBuiltInParse bool
+
+	// nwe base layer
 }
 
 func (s *Service) GetResourceOrDataFor(file fs.DirEntry, content string) ResourceOrData {
@@ -78,27 +82,11 @@ func (s *Service) GetResourceOrDataFor(file fs.DirEntry, content string) Resourc
 		e.IsGenerated = true
 	}
 
+	// uses built in parse (ie not pandora parse function)
+	isBuiltInParse := regexp.MustCompile("= parse.")
+	if isBuiltInParse.MatchString(content) {
+		e.UsesBuiltInParse = true
+	}
+
 	return e
-}
-
-func (rds ResourceOrData) GetTotal() Totals {
-	t := Totals{}
-
-	if rds.IsTyped {
-		t.Typed++
-	}
-
-	if rds.SdkTrack1 {
-		t.SdkTrack1++
-	}
-
-	if rds.SdkPandora {
-		t.SdkPandora++
-	}
-
-	if rds.SdkPandora && rds.SdkTrack1 {
-		t.SdkBoth++
-	}
-
-	return t
 }
