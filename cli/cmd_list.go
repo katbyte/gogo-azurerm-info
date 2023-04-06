@@ -56,7 +56,7 @@ func ListTrack1(v provider.Version) {
 
 		toMigrate += t.SdkTrack1
 
-		c.Printf(" <cyan>%s</> (<lightMagenta>%d</> using track1)\n", s.Name, t.SdkTrack1)
+		c.Printf(" <cyan>%s</> (<lightMagenta>%d</>/<magenta>%d</> using track1)\n", s.Name, t.SdkTrack1, t.Resources+t.DataSources)
 		rds := s.FilterResourcesDatas(func(rds provider.ResourceOrData) bool {
 			return rds.SdkTrack1
 		})

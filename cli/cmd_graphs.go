@@ -265,6 +265,8 @@ func GraphsPandoraSDKMigration(versions *[]provider.Version, outPath string) err
 		}),
 	)
 
+	// TODO put back in total resources line
+
 	// Put data into instance
 	graph.SetXAxis(xAxis).
 		AddSeries("Resources", resourcesPandora).
