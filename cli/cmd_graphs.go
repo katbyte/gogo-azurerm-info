@@ -192,7 +192,10 @@ func GraphsResourcesDataSourcesOverTime(versions *[]provider.Version, outPath st
 
 func GraphsPandoraSDKMigration(versions *[]provider.Version, outPath string) error {
 	var xAxis []string
-	var resources, resourcesPandora, dataSources, dataSourcesPandora []opts.LineData
+	var total, resourcesPandora, dataSourcesPandora []opts.LineData
+
+	var curTotal, curDone int
+	var ver string
 
 	var data [][]string
 	data = append(data, []string{"version", "services", "resources", "resources-pandora", "data-sources", "data-sources-pandora"})
@@ -201,13 +204,17 @@ func GraphsPandoraSDKMigration(versions *[]provider.Version, outPath string) err
 		tr := v.CalculateResourceTotals()
 		td := v.CalculateDataSourceTotals()
 
-		// todo add a 2nd axis for services
+		// todo add a 2nd axis for services ??
 
 		xAxis = append(xAxis, v.Name)
-		resources = append(resources, opts.LineData{Value: t.Resources})
+		total = append(total, opts.LineData{Value: t.Resources + t.DataSources})
 		resourcesPandora = append(resourcesPandora, opts.LineData{Value: tr.SdkPandora})
-		dataSources = append(dataSources, opts.LineData{Value: t.DataSources})
 		dataSourcesPandora = append(dataSourcesPandora, opts.LineData{Value: td.SdkPandora})
+
+		// just keep doing this and the last one will be the most recent
+		curTotal = t.Resources + t.DataSources
+		curDone = t.SdkPandora
+		ver = v.Name
 
 		data = append(data,
 			[]string{v.Name,
@@ -241,8 +248,9 @@ func GraphsPandoraSDKMigration(versions *[]provider.Version, outPath string) err
 	graph.SetGlobalOptions(
 		// charts.WithInitializationOpts(opts.Initialization{Theme: types.ThemeWesteros}),
 		charts.WithTitleOpts(opts.Title{
-			Title: "Pandora SDK Migration",
-			Left:  "center"}), // nolint:misspell
+			Title:    "Pandora SDK Migration",
+			Subtitle: fmt.Sprintf("%d/%d (%00.00f%%) done as of %s", curDone, curTotal, float32(curDone)/float32(curTotal)*100, ver),
+			Left:     "center"}), // nolint:misspell
 
 		charts.WithXAxisOpts(opts.XAxis{
 			Name: "Version",
@@ -256,7 +264,7 @@ func GraphsPandoraSDKMigration(versions *[]provider.Version, outPath string) err
 			Width:  "1500px",
 			Height: "750px",
 		}),
-		charts.WithColorsOpts(opts.Colors{"#2E4555", "#62A0A8", "#C13530"}),
+		charts.WithColorsOpts(opts.Colors{"#000000", "#2E4555", "#62A0A8"}),
 		charts.WithToolboxOpts(opts.Toolbox{Show: true}),
 		charts.WithLegendOpts(opts.Legend{
 			Show: true,
@@ -269,14 +277,14 @@ func GraphsPandoraSDKMigration(versions *[]provider.Version, outPath string) err
 
 	// Put data into instance
 	graph.SetXAxis(xAxis).
-		AddSeries("Resources", resourcesPandora).
-		AddSeries("Data Sources", dataSourcesPandora).
-		SetSeriesOptions(charts.WithAreaStyleOpts(opts.AreaStyle{
-			Opacity: 0.7,
-		}),
-			charts.WithLineChartOpts(opts.LineChart{
-				Stack: "elements",
-			}))
+		AddSeries("Total Resources/DataSources", total,
+			charts.WithAreaStyleOpts(opts.AreaStyle{Opacity: 0.001})).
+		AddSeries("Resources Migrated", resourcesPandora,
+			charts.WithAreaStyleOpts(opts.AreaStyle{Opacity: 1.0}),
+			charts.WithLineChartOpts(opts.LineChart{Stack: "elements"})).
+		AddSeries("Data Sources Migrated", dataSourcesPandora,
+			charts.WithAreaStyleOpts(opts.AreaStyle{Opacity: 1.0}),
+			charts.WithLineChartOpts(opts.LineChart{Stack: "elements"}))
 
 	// Where the magic happens
 	file, err = os.Create(outPath + "/pandora-sdk-migration.html")

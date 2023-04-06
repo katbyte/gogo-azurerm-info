@@ -26,7 +26,7 @@ func CmdList(_ *cobra.Command, args []string) error {
 	}
 
 	t := v.CalculateTotals()
-	c.Printf(" <magenta>%d</> services with %d resources and %d data sources\n", len(v.Services), t.Resources, t.DataSources)
+	c.Printf(" <magenta>%d</> services with <lightGreen>%d</> resources and <lightBlue>%d</> data sources\n", len(v.Services), t.Resources, t.DataSources)
 
 	switch args[1] {
 	case "track1":
@@ -35,6 +35,8 @@ func CmdList(_ *cobra.Command, args []string) error {
 		ListTyped(v)
 	case "create-update":
 		ListSharedCreateUpdate(v)
+	case "built-in-parse":
+		ListBuiltInParse(v)
 	default:
 		return fmt.Errorf("unknown list type '%s'", args[1])
 	}
@@ -131,6 +133,44 @@ func ListSharedCreateUpdate(v provider.Version) {
 
 		rds := s.FilterResourcesDatasInterfaced(func(rds interface{}) bool {
 			if r, ok := rds.(provider.Resource); ok {
+
+				return r.SharedCreateUpdate
+			}
+			return false
+		})
+
+		for _, r := range rds {
+			c.Printf("    <gray>%s/</>%s \n", r.Service.Path, r.GoFileName)
+		}
+
+		fmt.Println()
+	}
+
+	fmt.Println()
+	fmt.Println()
+
+	c.Printf("<red>%d</>/<yellow>%d</> resources that need their shared create/update function split\n", toMigrate, total)
+}
+
+func ListBuiltInParse(v provider.Version) {
+	total := 0
+	toMigrate := 0
+	for _, s := range v.Services {
+		t := s.CalculateTotals()
+		total += t.Resources
+		total += t.DataSources
+
+		if t.CreateUpdate == 0 {
+			continue
+		}
+
+		toMigrate += t.CreateUpdate
+
+		c.Printf(" <cyan>%s</> (<lightMagenta>%d</> is sharing a create/update function)\n", s.Name, t.CreateUpdate)
+
+		rds := s.FilterResourcesDatasInterfaced(func(rds interface{}) bool {
+			if r, ok := rds.(provider.Resource); ok {
+
 				return r.SharedCreateUpdate
 			}
 			return false

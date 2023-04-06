@@ -41,7 +41,7 @@ func (s *Service) CalculateDataSourceTotals() Totals {
 	return totals
 }
 
-func (s *Service) FilterResourcesDatas(f func(rds ResourceOrData) bool) []ResourceOrData {
+func (s *Service) FilterResourcesDatasInterfaced(f func(rds interface{}) bool) []ResourceOrData {
 	rds := []ResourceOrData{}
 
 	for _, r := range s.Resources {
@@ -67,8 +67,8 @@ func (s *Service) FilterResourcesDatas(f func(rds ResourceOrData) bool) []Resour
 	return rds
 }
 
-func (s *Service) FilterResourcesDatasInterfaced(f func(rds interface{}) bool) []ResourceOrData {
-	return s.FilterResourcesDatas(func(rds ResourceOrData) bool {
-		return f(rds)
+func (s *Service) FilterResourcesDatas(f func(rds ResourceOrData) bool) []ResourceOrData {
+	return s.FilterResourcesDatasInterfaced(func(rds interface{}) bool {
+		return f(rds.(ResourceOrData))
 	})
 }
