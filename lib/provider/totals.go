@@ -6,6 +6,7 @@ type Totals struct {
 	DataSources  int
 	SdkTrack1    int
 	SdkPandora   int
+	SdkKermit    int
 	SdkBoth      int
 	Typed        int
 	CreateUpdate int
@@ -17,6 +18,7 @@ func (t Totals) Add(t2 Totals) Totals {
 	t.Resources += t2.Resources
 	t.DataSources += t2.DataSources
 	t.SdkTrack1 += t2.SdkTrack1
+	t.SdkKermit += t2.SdkKermit
 	t.SdkPandora += t2.SdkPandora
 	t.SdkBoth += t2.SdkBoth
 	t.Typed += t2.Typed
@@ -34,6 +36,10 @@ func (rds ResourceOrData) GetTotal() Totals {
 
 	if rds.SdkTrack1 {
 		t.SdkTrack1++
+	}
+
+	if rds.SdkKermit {
+		t.SdkKermit++
 	}
 
 	if rds.SdkPandora {

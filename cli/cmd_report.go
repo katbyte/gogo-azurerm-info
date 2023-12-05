@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	c "github.com/gookit/color" // nolint:misspell
@@ -49,8 +50,27 @@ func CmdReport(_ *cobra.Command, args []string) error {
 }
 
 func ReportDefault(v provider.Version) {
+	servicesEntirelyMigrated := make([]string, 0)
+	servicesPartiallyMigrated := make([]string, 0)
+	servicesUsingKermit := make([]string, 0)
+	servicesUsingTrack1 := make([]string, 0)
+
 	for _, s := range v.Services {
 		t := s.CalculateTotals()
+
+		if t.SdkPandora > 0 && t.SdkTrack1 == 0 && t.SdkBoth == 0 {
+			servicesEntirelyMigrated = append(servicesEntirelyMigrated, s.Name)
+			continue
+		}
+		if t.SdkPandora == 0 && (t.SdkBoth >= 0 || t.SdkTrack1 >= 0) {
+			servicesPartiallyMigrated = append(servicesPartiallyMigrated, s.Name)
+		}
+		if t.SdkKermit > 0 {
+			servicesUsingKermit = append(servicesUsingKermit, s.Name)
+		}
+		if t.SdkTrack1 > 0 {
+			servicesUsingTrack1 = append(servicesUsingTrack1, s.Name)
+		}
 
 		eCount := len(s.Resources) + len(s.DataSources)
 
@@ -71,6 +91,12 @@ func ReportDefault(v provider.Version) {
 		c.Printf("    Typed:   %d / %d\n", t.Typed, eCount)
 		c.Printf("\n")
 	}
+
+	log.Printf("Services fully migrated to Pandora: %d", len(servicesEntirelyMigrated))
+	log.Printf("Services partially migrated to Pandora: %d", len(servicesPartiallyMigrated))
+	log.Printf("Services using Kermit: %d", len(servicesUsingKermit))
+	log.Printf("Services using Track1: %d", len(servicesUsingTrack1))
+
 }
 
 func ReportPandoraSdkIssue(v provider.Version) {
