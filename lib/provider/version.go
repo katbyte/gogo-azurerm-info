@@ -47,8 +47,11 @@ func (v *Version) ScanServices() error {
 			return fmt.Errorf("scanning data sources for %s: %w", s.Name, err)
 		}
 
-		// get clients?
-
+		/*s.ScanClients()
+		if err != nil {
+			return fmt.Errorf("scanning clients for %s: %w", s.Name, err)
+		}
+		*/
 		v.Services = append(v.Services, s)
 	}
 

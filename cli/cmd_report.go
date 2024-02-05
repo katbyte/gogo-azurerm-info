@@ -95,16 +95,16 @@ func ReportPandoraSdkIssue(v provider.Version) {
 		}
 
 		elementsTotal += eCount
-		elementsDone += t.SdkPandora - t.SdkBoth
+		elementsDone += eCount - t.SdkTrack1
 		elementsPartial += t.SdkBoth
 
 		if done {
 			fmt.Printf("- [X] `%s` _(%d)_\n", s.Name, eCount)
 		} else {
-			fmt.Printf("- [ ] `%s` _(%d/%d)_\n", s.Name, t.SdkPandora-t.SdkBoth, eCount)
+			fmt.Printf("- [ ] `%s` _(%d/%d)_\n", s.Name, eCount-t.SdkTrack1, eCount)
 		}
 	}
 
 	fmt.Printf("services: %d of %d (+%d partial)\n", servicesDone, len(v.Services), servicesPartial)
-	fmt.Printf("resources/datasources: %d of %d (+%d partial)\n", elementsDone, elementsTotal, elementsPartial)
+	fmt.Printf("resources/datasources: %d of %d (-%d partial)\n", elementsDone, elementsTotal, elementsPartial)
 }

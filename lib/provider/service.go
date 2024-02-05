@@ -11,8 +11,7 @@ type Service struct {
 	Resources   []Resource
 	DataSources []DataSource
 
-	// todo
-	// Clients   []Client
+	// Clients []Client
 }
 
 func (s *Service) CountResourcesDataSources() int {

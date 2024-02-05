@@ -92,7 +92,9 @@ func CmdGraphs(_ *cobra.Command, args []string) error {
 	if err = GraphsPandoraSDKMigration(&versionsToGraph, outPath); err != nil {
 		return fmt.Errorf("charting pandora migration: %w", err)
 	}
-
+	if err = GraphsPandoraSDKMigrationBurndown(&versionsToGraph, outPath); err != nil {
+		return fmt.Errorf("charting pandora migration (burndown): %w", err)
+	}
 	return nil
 }
 
@@ -264,6 +266,11 @@ func GraphsPandoraSDKMigration(versions *[]provider.Version, outPath string) err
 			Width:  "1500px",
 			Height: "750px",
 		}),
+		charts.WithTooltipOpts(opts.Tooltip{
+			Show:      true,
+			Trigger:   "axis",
+			TriggerOn: "mousemove",
+		}),
 		charts.WithColorsOpts(opts.Colors{"#000000", "#2E4555", "#62A0A8"}),
 		charts.WithToolboxOpts(opts.Toolbox{Show: true}),
 		charts.WithLegendOpts(opts.Legend{
@@ -288,6 +295,123 @@ func GraphsPandoraSDKMigration(versions *[]provider.Version, outPath string) err
 
 	// Where the magic happens
 	file, err = os.Create(outPath + "/pandora-sdk-migration.html")
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+
+	err = graph.Render(file)
+	if err != nil {
+		return fmt.Errorf("failed to render graph graph: %w", err)
+	}
+
+	return nil
+}
+
+func GraphsPandoraSDKMigrationBurndown(versions *[]provider.Version, outPath string) error {
+	var xAxis []string
+	var total, resourcesPandora, dataSourcesPandora []opts.LineData
+
+	var curTotal, curLeft int
+	var ver string
+
+	var data [][]string
+	data = append(data, []string{"version", "services", "resources", "resources-pandora-left", "data-sources", "data-sources-pandora-left"})
+	for _, v := range *versions {
+		t := v.CalculateTotals()
+		tr := v.CalculateResourceTotals()
+		td := v.CalculateDataSourceTotals()
+
+		// todo add a 2nd axis for services ??
+		rleft := tr.SdkTrack1
+		dleft := td.SdkTrack1
+
+		xAxis = append(xAxis, v.Name)
+		total = append(total, opts.LineData{Value: t.Resources + t.DataSources})
+		resourcesPandora = append(resourcesPandora, opts.LineData{Value: rleft})
+		dataSourcesPandora = append(dataSourcesPandora, opts.LineData{Value: dleft})
+
+		// just keep doing this and the last one will be the most recent
+		curTotal = t.Resources + t.DataSources
+		curLeft = rleft - dleft
+		ver = v.Name
+
+		data = append(data,
+			[]string{v.Name,
+				strconv.Itoa(t.Services),
+				strconv.Itoa(t.Resources),
+				strconv.Itoa(rleft),
+				strconv.Itoa(t.DataSources),
+				strconv.Itoa(dleft),
+			})
+	}
+
+	// write raw data
+	file, err := os.Create(outPath + "/pandora-sdk-migration-burndown.csv")
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	csv := csv.NewWriter(file)
+	defer csv.Flush()
+
+	for _, r := range data {
+		err := csv.Write(r)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// render graph
+	graph := charts.NewLine()
+	graph.SetGlobalOptions(
+		// charts.WithInitializationOpts(opts.Initialization{Theme: types.ThemeWesteros}),
+		charts.WithTitleOpts(opts.Title{
+			Title:    "Pandora SDK Migration",
+			Subtitle: fmt.Sprintf("%d/%d (%00.00f%%) still using track1 as of %s", curLeft, curTotal, float32(curLeft)/float32(curTotal)*100, ver),
+			Left:     "center"}), // nolint:misspell
+
+		charts.WithXAxisOpts(opts.XAxis{
+			Name: "Version",
+			// AxisLabel: &opts.AxisLabel{Show: true, Formatter: "{value} x-unit"},
+		}),
+		charts.WithYAxisOpts(opts.YAxis{
+			Name: "Total",
+			// AxisLabel: &opts.AxisLabel{Show: true, Formatter: "{value} x-unit"},
+		}),
+		charts.WithInitializationOpts(opts.Initialization{
+			Width:  "1500px",
+			Height: "750px",
+		}),
+		charts.WithTooltipOpts(opts.Tooltip{
+			Show:      true,
+			Trigger:   "axis",
+			TriggerOn: "mousemove",
+		}),
+		charts.WithColorsOpts(opts.Colors{"#000000", "#2E4555", "#62A0A8"}),
+		charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithLegendOpts(opts.Legend{
+			Show: true,
+			Top:  "bottom",
+			Left: "center", // nolint:misspell
+		}),
+	)
+
+	// TODO put back in total resources line
+
+	// Put data into instance
+	graph.SetXAxis(xAxis).
+		AddSeries("Total Resources/DataSources", total,
+			charts.WithAreaStyleOpts(opts.AreaStyle{Opacity: 0.001})).
+		AddSeries("Resources Remaining", resourcesPandora,
+			charts.WithAreaStyleOpts(opts.AreaStyle{Opacity: 1.0}),
+			charts.WithLineChartOpts(opts.LineChart{Stack: "elements"})).
+		AddSeries("Data Sources Remaining", dataSourcesPandora,
+			charts.WithAreaStyleOpts(opts.AreaStyle{Opacity: 1.0}),
+			charts.WithLineChartOpts(opts.LineChart{Stack: "elements"}))
+
+	// Where the magic happens
+	file, err = os.Create(outPath + "/pandora-sdk-migration-burndown.html")
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}

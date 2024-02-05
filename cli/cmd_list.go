@@ -60,13 +60,13 @@ func ListTrack1(v provider.Version) {
 
 		c.Printf(" <cyan>%s</> (<lightMagenta>%d</>/<magenta>%d</> using track1)\n", s.Name, t.SdkTrack1, t.Resources+t.DataSources)
 		rds := s.FilterResourcesDatas(func(rds provider.ResourceOrData) bool {
-			return rds.SdkTrack1
+			return rds.SdkAzureSdkGo
 		})
 
 		for _, r := range rds {
 			if r.SdkPandora {
 				c.Printf("    <gray>%s/</>%s <yellow>(partial)</>\n", r.Service.Path, r.GoFileName)
-			} else if r.SdkTrack1 {
+			} else if r.SdkAzureSdkGo {
 				c.Printf("    <gray>%s/</>%s \n", r.Service.Path, r.GoFileName)
 			}
 		}
